@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>게임 숙제 관리자 페이지</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+    body { margin: 0; background: #f3f4f6; color: #111827; }
+    .app { max-width: 560px; margin: 0 auto; padding: 16px 14px 28px; }
+    header { margin-bottom: 12px; }
+    .title { font-size: 20px; font-weight: 700; }
+    .subtitle { font-size: 13px; color: #6b7280; margin-top: 4px; }
+    .card { background: #ffffff; border-radius: 16px; padding: 12px 12px; box-shadow: 0 3px 10px rgba(15,23,42,0.08); margin-bottom: 10px; }
+    .field { margin-bottom: 10px; }
+    .field-label { font-size: 12px; color: #6b7280; margin-bottom: 4px; }
+    .field-row { display: flex; gap: 6px; }
+    input[type="date"], input[type="text"], input[type="time"], textarea {
+      padding: 7px 8px;
+      font-size: 13px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      width: 100%;
+      resize: vertical;
+    }
+    textarea { min-height: 60px; }
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-small {
+      border: none;
+      border-radius: 10px;
+      padding: 5px 8px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .btn-primary { background: #4f46e5; color: #fff; }
+    .btn-danger { background: #ef4444; color: #fff; }
+    .btn-outline { background: #fff; color: #374151; border: 1px solid #d1d5db; }
+    .btn-soft { background: #eef2ff; color: #4f46e5; }
+    .btn-soft2 { background: #ecfdf5; color: #15803d; }
+    .task-row, .post-row {
+      display: flex;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .task-row:last-child, .post-row:last-child { border-bottom: none; }
+    .task-text { flex: 1; font-size: 13px; }
+    .task-actions { display:flex; gap:4px; }
+    .empty-text {
+      font-size: 13px;
+      color: #9ca3af;
+      text-align: center;
+      padding: 10px 4px;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #4f46e5;
+    }
+    footer {
+      margin-top: 18px;
+      font-size: 11px;
+      text-align: center;
+      color: #9ca3af;
+    }
+
+    .post-thumb {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      object-fit: cover;
+      margin-right: 8px;
+      background:#e5e7eb;
+    }
+    .post-main { flex: 1; }
+    .post-text {
+      font-size: 12px;
+      color:#374151;
+      max-height: 3.4em;
+      overflow: hidden;
+      white-space: pre-wrap;
+    }
+    .post-meta { font-size: 11px; color:#9ca3af; margin-top:2px; }
+    .post-actions { display:flex; gap:4px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="title">게임 숙제 관리자</div>
+      <div class="subtitle">날짜별 숙제 + 게임 정보 게시판 관리</div>
+    </header>
+
+    <!-- 날짜 선택 -->
+    <div class="card">
+      <div class="field">
+        <div class="field-label">관리 날짜 선택 (11시 기준 게임 날짜)</div>
+        <div class="field-row">
+          <input type="date" id="dateInput" />
+        </div>
+        <div style="margin-top:4px; font-size:11px; color:#6b7280;" id="dateInfo"></div>
+      </div>
+    </div>
+
+    <!-- 숙제 슬롯 추가 -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span class="field-label" style="font-size:13px; color:#374151;">새 숙제 슬롯 추가</span>
+        <span class="badge">숙제 이름 + 슬롯 + 시간</span>
+      </div>
+
+      <div class="field">
+        <div class="field-label">숙제 이름</div>
+        <input type="text" id="questNameInput" placeholder="예: 일일 공통 / 전면전비 등" />
+      </div>
+
+      <div class="field">
+        <div class="field-label">슬롯 이름</div>
+        <input type="text" id="slotNameInput" placeholder="예: 11시 리셋 / 11 ~ 15 등" />
+      </div>
+
+      <div class="field">
+        <div class="field-label">이벤트 시간</div>
+        <div class="field-row">
+          <input type="time" id="eventTimeInput" />
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="addTaskBtn" style="width:100%; margin-top:4px;">슬롯 추가</button>
+    </div>
+
+    <!-- 고정 숙제 자동 추가 -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span class="field-label" style="font-size:13px; color:#374151;">고정 숙제 자동 추가</span>
+        <span class="badge">일일 공통 + 전면전비 + 요일</span>
+      </div>
+      <div style="font-size:12px; color:#6b7280; margin-bottom:8px;">
+        현재 선택된 날짜(11시 기준 게임 날짜)에 고정 숙제를 한 번에 추가합니다.<br>
+        이미 있는 항목(숙제 이름 + 슬롯 동일)은 중복으로 추가되지 않습니다.
+      </div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap;">
+        <button class="btn btn-soft" id="addFixedDailyBtn" style="flex:1;">일일 공통만 추가</button>
+        <button class="btn btn-soft2" id="addFixedBattleBtn" style="flex:1;">전면전비만 추가</button>
+      </div>
+      <button class="btn btn-outline" id="addFixedAllBtn" style="width:100%; margin-top:6px;">고정 숙제 전체 추가</button>
+      <button class="btn btn-soft" id="addWeekdayTasksBtn" style="width:100%; margin-top:8px;">
+        요일별 고정 숙제 자동 추가
+      </button>
+    </div>
+
+    <!-- 숙제 슬롯 목록 -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span class="field-label" style="font-size:13px; color:#374151;">해당 날짜의 숙제 슬롯 목록</span>
+        <span style="display:flex; align-items:center; gap:6px;">
+          <span class="badge" id="taskCountBadge">0개</span>
+          <button class="btn-small btn-danger" id="deleteAllTasksBtn">전체 삭제</button>
+        </span>
+      </div>
+      <div id="taskList">
+        <div class="empty-text">등록된 슬롯이 없습니다.</div>
+      </div>
+    </div>
+
+    <!-- 체크 기록 초기화 -->
+    <div class="card">
+      <div class="field-label" style="font-size:13px; color:#b91c1c; margin-bottom:6px;">체크 기록 초기화</div>
+      <div style="font-size:12px; color:#6b7280; margin-bottom:8px;">
+        현재 선택된 날짜의 사용자 체크 기록을 모두 지웁니다.<br>
+        (숙제 슬롯 목록은 그대로 두고, 체크만 리셋)
+      </div>
+      <button class="btn btn-danger" id="resetChecksBtn" style="width:100%;">해당 날짜 체크 전체 초기화</button>
+    </div>
+
+    <!-- 게임 정보 게시판 (이미지+설명 업로드) -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span class="field-label" style="font-size:13px; color:#374151;">게임 정보 게시판</span>
+        <span class="badge">사용자에게 노출</span>
+      </div>
+
+      <div class="field">
+        <div class="field-label">이미지 (선택)</div>
+        <input type="file" id="postImageInput" accept="image/*" />
+        <div style="margin-top:4px; font-size:11px; color:#9ca3af;">
+          이미지 없이 텍스트만 올려도 됩니다.
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">설명</div>
+        <textarea id="postTextInput" placeholder="예: 오늘 점검 보상 목록 / 이벤트 안내 등"></textarea>
+      </div>
+
+      <button class="btn btn-primary" id="postUploadBtn" style="width:100%; margin-top:4px;">게시물 올리기</button>
+    </div>
+
+    <!-- 게시물 목록 -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span class="field-label" style="font-size:13px; color:#374151;">등록된 게시물</span>
+        <span class="badge" id="postCountBadge">0개</span>
+      </div>
+      <div id="postList">
+        <div class="empty-text">아직 게시물이 없습니다.</div>
+      </div>
+    </div>
+
+    <footer>
+      관리자 비밀번호 기본값: 1234 (코드에서 변경 가능) / 11시 이후 접속 시 전날 데이터 자동 삭제
+    </footer>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+  <script>
+    // 🔥 Firebase 설정
+    const firebaseConfig = {
+      apiKey: "AIzaSyBXSZndtSEXXuft34RwcNWelwSWwegGCMo",
+      authDomain: "sera-daily-quest.firebaseapp.com",
+      databaseURL: "https://sera-daily-quest-default-rtdb.firebaseio.com",
+      projectId: "sera-daily-quest",
+      storageBucket: "sera-daily-quest.firebasestorage.app",
+      messagingSenderId: "718148155264",
+      appId: "1:718148155264:web:cb0a651fa38f918e6ab365"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const storage = firebase.storage();
+
+    const ADMIN_PASSWORD = "1234"; // 필요하면 변경
+
+    // DOM 요소
+    const dateInput = document.getElementById("dateInput");
+    const dateInfo = document.getElementById("dateInfo");
+    const questNameInput = document.getElementById("questNameInput");
+    const slotNameInput = document.getElementById("slotNameInput");
+    const eventTimeInput = document.getElementById("eventTimeInput");
+    const addTaskBtn = document.getElementById("addTaskBtn");
+    const taskListEl = document.getElementById("taskList");
+    const taskCountBadge = document.getElementById("taskCountBadge");
+    const resetChecksBtn = document.getElementById("resetChecksBtn");
+    const deleteAllTasksBtn = document.getElementById("deleteAllTasksBtn");
+
+    const addFixedDailyBtn = document.getElementById("addFixedDailyBtn");
+    const addFixedBattleBtn = document.getElementById("addFixedBattleBtn");
+    const addFixedAllBtn = document.getElementById("addFixedAllBtn");
+    const addWeekdayTasksBtn = document.getElementById("addWeekdayTasksBtn");
+
+    const postImageInput = document.getElementById("postImageInput");
+    const postTextInput = document.getElementById("postTextInput");
+    const postUploadBtn = document.getElementById("postUploadBtn");
+    const postListEl = document.getElementById("postList");
+    const postCountBadge = document.getElementById("postCountBadge");
+
+    let currentDateKey = null;
+    let tasks = {};
+    let tasksRef = null;
+
+    let boardPosts = {};
+    const boardPostsRef = db.ref("boardPosts");
+
+    // ===== 날짜/키 유틸 =====
+    function pad(n) { return n.toString().padStart(2, "0"); }
+
+    function dateToKey(date) {
+      const y = date.getFullYear();
+      const m = pad(date.getMonth() + 1);
+      const d = pad(date.getDate());
+      return `${y}-${m}-${d}`;
+    }
+
+    // 11시 기준 게임 날짜 키
+    function getResetBasedKeyNow() {
+      const now = new Date(); // 한국에서 쓰면 KST
+      const hour = now.getHours(); // 0~23
+      if (hour < 11) {
+        now.setDate(now.getDate() - 1);
+      }
+      return dateToKey(now);
+    }
+
+    function getYesterdayKey() {
+      const d = new Date();
+      d.setDate(d.getDate() - 1);
+      return dateToKey(d);
+    }
+
+    function keyToKoreanText(key) {
+      const parts = key.split("-");
+      if (parts.length !== 3) return key;
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10);
+      const d = parseInt(parts[2], 10);
+      const dt = new Date(y, m - 1, d);
+      const dayNames = ["일","월","화","수","목","금","토"];
+      const dow = dayNames[dt.getDay()];
+      return `${y}년 ${m}월 ${d}일 (${dow})`;
+    }
+
+    function getDayOfKey(dateKey) {
+      const parts = dateKey.split("-");
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      const d = parseInt(parts[2], 10);
+      const dt = new Date(y, m, d);
+      return dt.getDay(); // 0=일,1=월,2=화,3=수,4=목,5=금,6=토
+    }
+
+    // 🔹 고정 숙제 정의 (네가 지정한 버전)
+    const fixedDailyTasks = [
+      { questName: "주형이 하트누르기", slotName: "20회", eventTime: "" },
+      { questName: "11시 리셋",        slotName: "일일 보상 받기", eventTime: "" },
+      { questName: "난폭 좀비",        slotName: "4회잡기", eventTime: "" },
+      { questName: "혼돈의땅",         slotName: "집결 모집5회", eventTime: "" },
+      { questName: "혼돈의땅1",        slotName: "집결 참여30회", eventTime: "" },
+      { questName: "경기장",           slotName: "5회하기", eventTime: "" },
+      { questName: "화물차보내기",     slotName: "4대보내기", eventTime: "" },
+      { questName: "리소스찾기",       slotName: "5개찾기", eventTime: "" },
+      { questName: "현상금퀘스트",     slotName: "", eventTime: "" },
+      { questName: "레이더 완료하기",  slotName: "", eventTime: "" }
+    ];
+
+    const fixedBattleTasks = [
+      { questName: "전면전비(11 ~ 15)", slotName: "", eventTime: "11~15" },
+      { questName: "전면전비(15 ~ 19)", slotName: "", eventTime: "15~19" },
+      { questName: "전면전비(19 ~ 23)", slotName: "", eventTime: "19~23" },
+      { questName: "전면전비(23 ~ 03)", slotName: "", eventTime: "23~03" },
+      { questName: "전면전비(03 ~ 07)", slotName: "", eventTime: "03~07" },
+      { questName: "전면전비(07 ~ 11)", slotName: "", eventTime: "07~11" }
+    ];
+
+    // 요일별 추가용
+    const sundayTasks = [
+      { questName: "시련좀비", slotName: "", eventTime: "" }
+    ];
+    const tueThuSunTasks = [
+      { questName: "영웅전장", slotName: "진영별 전장", eventTime: "" }
+    ];
+
+    function addFixedToDate(list) {
+      if (!currentDateKey) {
+        alert("먼저 날짜를 선택해 주세요.");
+        return;
+      }
+      const existing = Object.values(tasks || {});
+      list.forEach(item => {
+        const exists = existing.some(t =>
+          (t.questName || "") === item.questName &&
+          (t.slotName || "") === item.slotName
+        );
+        if (!exists) {
+          const ref = db.ref(`days/${currentDateKey}/tasks`).push();
+          ref.set({
+            questName: item.questName,
+            slotName: item.slotName,
+            eventTime: item.eventTime,
+            order: Date.now()
+          });
+        }
+      });
+    }
+
+    function addWeekdayTasks() {
+      if (!currentDateKey) {
+        alert("먼저 날짜를 선택해 주세요.");
+        return;
+      }
+      const day = getDayOfKey(currentDateKey); // 0~6
+      let addedSomething = false;
+
+      // 일요일: 시련좀비 + 영웅전장(진영별 전장)
+      if (day === 0) {
+        addFixedToDate(sundayTasks);
+        addFixedToDate(tueThuSunTasks);
+        addedSomething = true;
+      }
+
+      // 화(2), 목(4): 영웅전장(진영별 전장)
+      if (day === 2 || day === 4) {
+        addFixedToDate(tueThuSunTasks);
+        addedSomething = true;
+      }
+
+      if (addedSomething) {
+        alert("요일별 고정 숙제를 추가했습니다. (이미 있는 항목은 건너뜀)");
+      } else {
+        alert("이 날짜는 요일별 고정 숙제 대상이 아닙니다.");
+      }
+    }
+
+    addFixedDailyBtn.addEventListener("click", () => {
+      addFixedToDate(fixedDailyTasks);
+      alert("일일 고정 숙제를 추가했습니다.");
+    });
+
+    addFixedBattleBtn.addEventListener("click", () => {
+      addFixedToDate(fixedBattleTasks);
+      alert("전면전비 고정 숙제를 추가했습니다.");
+    });
+
+    addFixedAllBtn.addEventListener("click", () => {
+      addFixedToDate([...fixedDailyTasks, ...fixedBattleTasks]);
+      alert("고정 숙제 전체를 추가했습니다.");
+    });
+
+    addWeekdayTasksBtn.addEventListener("click", () => {
+      addWeekdayTasks();
+    });
+
+    // 🔹 숙제 슬롯 렌더링
+    function renderTasks() {
+      const entries = Object.entries(tasks).sort((a,b)=>{
+        const ao = a[1].order || 0;
+        const bo = b[1].order || 0;
+        return ao - bo;
+      });
+
+      taskListEl.innerHTML = "";
+      taskCountBadge.textContent = `${entries.length}개`;
+
+      if (entries.length === 0) {
+        taskListEl.innerHTML = '<div class="empty-text">등록된 슬롯이 없습니다.</div>';
+        return;
+      }
+
+      entries.forEach(([id, t]) => {
+        const row = document.createElement("div");
+        row.className = "task-row";
+
+        const text = document.createElement("div");
+        text.className = "task-text";
+        const q = t.questName || "";
+        const s = t.slotName || "";
+        const time = t.eventTime || "";
+        const label = s ? `${q} - ${s}` : q;
+        text.textContent = `${label} (${time || "시간 없음"})`;
+
+        const actions = document.createElement("div");
+        actions.className = "task-actions";
+
+        // 수정 버튼
+        const editBtn = document.createElement("button");
+        editBtn.className = "btn-small btn-outline";
+        editBtn.textContent = "수정";
+        editBtn.addEventListener("click", () => {
+          const qCur = t.questName || "";
+          const sCur = t.slotName || "";
+          const timeCur = t.eventTime || "";
+
+          const newQ = prompt("숙제 이름을 수정하세요.", qCur);
+          if (newQ === null) return;
+
+          const newS = prompt("슬롯 이름을 수정하세요.", sCur);
+          if (newS === null) return;
+
+          const newT = prompt("이벤트 시간을 수정하세요. (예: 11:00 또는 11~15, 빈칸 가능)", timeCur);
+          if (newT === null) return;
+
+          const updated = {
+            questName: newQ.trim() || qCur,
+            slotName: newS.trim() || sCur,
+            eventTime: newT.trim()
+          };
+
+          db.ref(`days/${currentDateKey}/tasks/${id}`).update(updated);
+        });
+
+        // 삭제 버튼
+        const delBtn = document.createElement("button");
+        delBtn.className = "btn-small btn-danger";
+        delBtn.textContent = "삭제";
+        delBtn.addEventListener("click", () => {
+          if (confirm(`"${t.questName || ""} - ${t.slotName || ""}" 슬롯을 삭제할까요?`)) {
+            db.ref(`days/${currentDateKey}/tasks/${id}`).remove();
+          }
+        });
+
+        actions.appendChild(editBtn);
+        actions.appendChild(delBtn);
+
+        row.appendChild(text);
+        row.appendChild(actions);
+        taskListEl.appendChild(row);
+      });
+    }
+
+    function attachTasksListener() {
+      if (!currentDateKey) return;
+      if (tasksRef) tasksRef.off();
+
+      tasksRef = db.ref(`days/${currentDateKey}/tasks`);
+      tasksRef.on("value", (snap) => {
+        tasks = snap.val() || {};
+        renderTasks();
+      });
+    }
+
+    // 새 슬롯 추가
+    addTaskBtn.addEventListener("click", () => {
+      if (!currentDateKey) {
+        alert("먼저 날짜를 선택해 주세요.");
+        return;
+      }
+      const questName = questNameInput.value.trim();
+      const slotName = slotNameInput.value.trim();
+      const eventTime = eventTimeInput.value || "";
+
+      if (!questName || !slotName) {
+        alert("숙제 이름과 슬롯 이름을 모두 입력해 주세요.");
+        return;
+      }
+
+      const ref = db.ref(`days/${currentDateKey}/tasks`).push();
+      ref.set({
+        questName,
+        slotName,
+        eventTime,
+        order: Date.now()
+      });
+
+      slotNameInput.value = "";
+      eventTimeInput.value = "";
+    });
+
+    // 체크 기록 초기화 (체크만)
+    resetChecksBtn.addEventListener("click", () => {
+      if (!currentDateKey) {
+        alert("먼저 날짜를 선택해 주세요.");
+        return;
+      }
+      if (confirm(`${keyToKoreanText(currentDateKey)}의 체크 기록을 모두 삭제할까요?`)) {
+        db.ref(`days/${currentDateKey}/checks`).remove();
+        alert("체크 기록을 초기화했습니다.");
+      }
+    });
+
+    // 해당 날짜의 숙제 슬롯 전체 삭제 (tasks + checks)
+    deleteAllTasksBtn.addEventListener("click", () => {
+      if (!currentDateKey) {
+        alert("먼저 날짜를 선택해 주세요.");
+        return;
+      }
+      if (!confirm(`${keyToKoreanText(currentDateKey)}의 모든 숙제 슬롯을 삭제할까요?\n(해당 날짜의 체크 기록도 함께 삭제됩니다)`)) {
+        return;
+      }
+      db.ref(`days/${currentDateKey}/tasks`).remove();
+      db.ref(`days/${currentDateKey}/checks`).remove();
+      alert("해당 날짜의 모든 슬롯과 체크 기록을 삭제했습니다.");
+    });
+
+    function initDate() {
+      const key = getResetBasedKeyNow(); // 🔥 11시 기준 게임 날짜 키
+      currentDateKey = key;
+      dateInput.value = key;
+      dateInfo.textContent = `${keyToKoreanText(key)} 관리 중 (키: ${key})`;
+      attachTasksListener();
+    }
+
+    dateInput.addEventListener("change", () => {
+      const val = dateInput.value;
+      if (!val) return;
+      currentDateKey = val;
+      dateInfo.textContent = `${keyToKoreanText(val)} 관리 중 (키: ${val})`;
+      attachTasksListener();
+    });
+
+    // 🔹 게시판 렌더링 (수정+삭제)
+    function renderPosts() {
+      const entries = Object.entries(boardPosts).sort((a,b)=>{
+        const ao = a[1].createdAt || 0;
+        const bo = b[1].createdAt || 0;
+        return bo - ao; // 최신순
+      });
+
+      postListEl.innerHTML = "";
+      postCountBadge.textContent = `${entries.length}개`;
+
+      if (entries.length === 0) {
+        postListEl.innerHTML = '<div class="empty-text">아직 게시물이 없습니다.</div>';
+        return;
+      }
+
+      entries.forEach(([id, p]) => {
+        const row = document.createElement("div");
+        row.className = "post-row";
+
+        if (p.imageUrl) {
+          const img = document.createElement("img");
+          img.className = "post-thumb";
+          img.src = p.imageUrl;
+          row.appendChild(img);
+        } else {
+          const placeholder = document.createElement("div");
+          placeholder.className = "post-thumb";
+          row.appendChild(placeholder);
+        }
+
+        const main = document.createElement("div");
+        main.className = "post-main";
+
+        const textDiv = document.createElement("div");
+        textDiv.className = "post-text";
+        textDiv.textContent = p.text || "";
+
+        const metaDiv = document.createElement("div");
+        metaDiv.className = "post-meta";
+        const date = p.createdAt ? new Date(p.createdAt) : null;
+        metaDiv.textContent = date ? `등록: ${date.toLocaleString("ko-KR")}` : "";
+
+        main.appendChild(textDiv);
+        main.appendChild(metaDiv);
+
+        const actions = document.createElement("div");
+        actions.className = "post-actions";
+
+        // 게시물 수정(텍스트)
+        const editBtn = document.createElement("button");
+        editBtn.className = "btn-small btn-outline";
+        editBtn.textContent = "수정";
+        editBtn.addEventListener("click", () => {
+          const curText = p.text || "";
+          const newText = prompt("게시물 내용을 수정하세요.", curText);
+          if (newText === null) return;
+          db.ref(`boardPosts/${id}`).update({
+            text: newText.trim() || curText
+          });
+        });
+
+        // 게시물 삭제
+        const delBtn = document.createElement("button");
+        delBtn.className = "btn-small btn-danger";
+        delBtn.textContent = "삭제";
+        delBtn.addEventListener("click", () => {
+          if (confirm("이 게시물을 삭제할까요? (이미지 파일은 Storage에 남아있을 수 있습니다)")) {
+            db.ref(`boardPosts/${id}`).remove();
+          }
+        });
+
+        actions.appendChild(editBtn);
+        actions.appendChild(delBtn);
+
+        row.appendChild(main);
+        row.appendChild(actions);
+        postListEl.appendChild(row);
+      });
+    }
+
+    // 게시물 업로드
+    postUploadBtn.addEventListener("click", async () => {
+      const file = postImageInput.files[0] || null;
+      const text = postTextInput.value.trim();
+
+      if (!file && !text) {
+        alert("이미지나 설명 중 하나는 입력해야 합니다.");
+        return;
+      }
+
+      postUploadBtn.disabled = true;
+      postUploadBtn.textContent = "업로드 중...";
+
+      try {
+        let imageUrl = null;
+
+        if (file) {
+          const id = Date.now();
+          const storageRef = storage.ref().child(`board/${id}_${file.name}`);
+          await storageRef.put(file);
+          imageUrl = await storageRef.getDownloadURL();
+        }
+
+        const newRef = boardPostsRef.push();
+        await newRef.set({
+          text,
+          imageUrl,
+          createdAt: Date.now()
+        });
+
+        postTextInput.value = "";
+        postImageInput.value = "";
+        alert("게시물을 등록했습니다.");
+      } catch (e) {
+        console.error(e);
+        alert("업로드 중 오류가 발생했습니다.");
+      } finally {
+        postUploadBtn.disabled = false;
+        postUploadBtn.textContent = "게시물 올리기";
+      }
+    });
+
+    // 게시판 리스너
+    boardPostsRef.on("value", (snap) => {
+      boardPosts = snap.val() || {};
+      renderPosts();
+    });
+
+    // 전날 데이터 삭제 (11시 이후에만)
+    function cleanPreviousDayIfAfterReset() {
+      const now = new Date();
+      const hour = now.getHours();
+      if (hour >= 11) {
+        const yesterdayKey = getYesterdayKey();
+        db.ref(`days/${yesterdayKey}`).remove()
+          .then(() => {
+            console.log(`어제 데이터(${yesterdayKey}) 삭제 완료`);
+          })
+          .catch((err) => {
+            console.error("전날 데이터 삭제 중 오류:", err);
+          });
+      }
+    }
+
+    // 비밀번호
+    function askPassword() {
+      const input = prompt("관리자 비밀번호를 입력하세요:");
+      if (input === null) {
+        alert("비밀번호가 필요합니다. 페이지를 새로고침해 주세요.");
+        return false;
+      }
+      if (input === ADMIN_PASSWORD) return true;
+      alert("비밀번호가 올바르지 않습니다.");
+      return false;
+    }
+
+    function init() {
+      if (!askPassword()) return;
+      cleanPreviousDayIfAfterReset(); // 11시 이후면 전날 days/* 삭제
+      initDate();
+    }
+
+    init();
+  </script>
+</body>
+</html>
