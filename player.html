@@ -337,7 +337,7 @@
 
         <div class="date-box">
           <div class="date-main" id="todayText">-</div>
-          <div class="date-badge" id="dateKeyText">-</div>
+          <div class="date-badge" id="dateKeyText" style="display:none;">-</div>
           <input type="date" id="dateSelect" style="display:none;">
         </div>
       </div>
@@ -595,7 +595,7 @@
   function setDateKey(key){
     currentDateKey = key;
     todayText.textContent = keyToKoreanText(key);
-    // dateKeyText.textContent = `게임 날짜 키: ${key}`;
+    dateKeyText.textContent = `게임 날짜 키: ${key}`;
     sideDateText.textContent = key;
     attachListeners();
   }
