@@ -490,10 +490,11 @@
         <table class="quest-table">
           <thead>
             <tr>
+                          <th style="text-align:center;">체크</th>
+
               <th>#</th>
               <th>숙제</th>
               <th>슬롯</th>
-              <th style="text-align:center;">체크</th>
             </tr>
           </thead>
           <tbody>
@@ -505,12 +506,13 @@
       const trClass = checked ? "done" : "";
       html += `
         <tr class="${trClass}" data-id="${id}">
-          <td>${i+1}</td>
-          <td>${q}</td>
-          <td>${s}</td>
           <td class="checkbox-cell">
             <input type="checkbox" class="quest-checkbox" ${checked?"checked":""} />
           </td>
+          <td>${i+1}</td>
+          <td>${q}</td>
+          <td>${s}</td>
+          
         </tr>
       `;
     });
