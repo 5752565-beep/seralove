@@ -218,6 +218,39 @@
       display: block;
     }
 
+    /* --- 오늘 확인할 것 --- */
+    .today-check {
+      margin-top: 8px;
+      margin-bottom: 8px;
+      border-radius: 12px;
+      padding: 8px 10px;
+      background: radial-gradient(circle at top left, #facc1533, transparent 60%);
+      border: 1px solid rgba(250, 204, 21, 0.5);
+    }
+    .today-check-title {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: #facc15;
+    }
+    .today-check-list {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 12px;
+      color: #e5e7eb;
+    }
+    .today-check-list li + li {
+      margin-top: 2px;
+    }
+
+    /* 슬롯 강조 셀 */
+    .slot-highlight-cell {
+      background: rgba(250, 204, 21, 0.12);
+      border-color: rgba(250, 204, 21, 0.9);
+      font-weight: 600;
+      color: #facc15;
+    }
+
     /* --- 게시판 --- */
     .board-list {
       display: flex;
@@ -355,6 +388,13 @@
         <div class="panel-header">
           <div class="panel-title">숙제 체크</div>
         </div>
+
+        <!-- ✅ 오늘 확인할 것 -->
+        <div class="today-check">
+          <div class="today-check-title">오늘 확인할 것</div>
+          <ul class="today-check-list" id="todayCheckList"></ul>
+        </div>
+
         <div id="questContent">
           <div class="empty-text">불러오는 중...</div>
         </div>
@@ -390,7 +430,7 @@
     authDomain: "sera-daily-quest.firebaseapp.com",
     databaseURL: "https://sera-daily-quest-default-rtdb.firebaseio.com",
     projectId: "sera-daily-quest",
-  storageBucket: "sera-daily-quest.firebasestorage.app", // ✅ 콘솔에 찍힌 거랑 동일하게
+    storageBucket: "sera-daily-quest.firebasestorage.app",
     messagingSenderId: "718148155264",
     appId: "1:718148155264:web:cb0a651fa38f918e6ab365"
   };
@@ -412,7 +452,80 @@
     const p = key.split("-");
     const dt = new Date(p[0], p[1]-1, p[2]);
     const day = ["일","월","화","수","목","금","토"][dt.getDay()];
+
     return `${p[0]}년 ${p[1]}월 ${p[2]}일 (${day})`;
+  }
+
+  // ✅ 요일별 중요 숙제 계획
+  // 0: 일 ~ 6: 토
+  const weeklyPlan = {
+    1: { // 월
+      label: '차량개조',
+      items: [
+        '차량개조(렌치, 도면)',
+        '좀비 잡기',
+        'Z코인 채집(3번 부대 채집 가기)',
+        '레이더 사용',
+      ],
+    },
+    2: { // 화
+      label: '피난소건설',
+      items: [
+        '피난소건설',
+        '피난민(모으고 있다가 쓰기)',
+        '현상금(S급 주황)',
+      ],
+    },
+    3: { // 수
+      label: '테크연구',
+      items: [
+        '테크연구',
+        '무역트럭(S급)',
+      ],
+    },
+    4: { // 목
+      label: '영웅확장',
+      items: [
+        '영웅성장(성장 조각, 스킬페이지)',
+        '무기 성장·승급·강화 (강화, 승급템 사용)',
+        '영웅모집',
+        '레이더 모으기',
+      ],
+    },
+    5: { // 금
+      label: '군대확장',
+      items: [
+        '병사 키우기',
+        '아무 가속템 사용',
+        '레이더',
+      ],
+    },
+    6: { // 토
+      // label: '약탈,탱크전',  // 필요하면 슬롯명과 맞춰서 사용할 수 있음
+      items: [
+        '약탈,탱크전',
+        '현상금,무역트럭(S급 주황)',
+      ],
+    },
+    0: { // 일
+      label: '레이더 모으기',
+      items: [
+        '레이더 모으기',
+      ],
+    },
+  };
+
+  function getPlanForDateKey(key){
+    if(!key) return null;
+    const p = key.split("-");
+    if(p.length !== 3) return null;
+    const y = parseInt(p[0], 10);
+    const m = parseInt(p[1], 10);
+    const d = parseInt(p[2], 10);
+    if(!y || !m || !d) return null;
+    const dt = new Date(y, m-1, d);
+    const day = dt.getDay(); // 0~6
+    return weeklyPlan[day] || null;
   }
 
   let currentDateKey = null;
@@ -443,6 +556,8 @@
   const questContent = document.getElementById("questContent");
   const guideContent = document.getElementById("guideContent");
 
+  const todayCheckList = document.getElementById("todayCheckList");
+
   const imageModal = document.getElementById("imageModal");
   const imageModalImg = document.getElementById("imageModalImg");
 
@@ -461,6 +576,26 @@
   }
   tabQuestsBtn.onclick = ()=> setActiveTab("quests");
   tabGuideBtn.onclick = ()=> setActiveTab("guide");
+
+  // ✅ 상단 "오늘 확인할 것" 렌더링
+  function renderTodayCheckList(){
+    if(!todayCheckList) return;
+    todayCheckList.innerHTML = "";
+
+    const plan = getPlanForDateKey(currentDateKey);
+    if(!plan || !Array.isArray(plan.items) || plan.items.length === 0){
+      const li = document.createElement("li");
+      li.textContent = "등록된 중요 숙제가 없어요.";
+      todayCheckList.appendChild(li);
+      return;
+    }
+
+    plan.items.forEach(text=>{
+      const li = document.createElement("li");
+      li.textContent = text;
+      todayCheckList.appendChild(li);
+    });
+  }
 
   function renderQuests(){
     const entries = Object.entries(tasks).sort((a,b)=>(a[1].order||0)-(b[1].order||0));
@@ -490,15 +625,14 @@
         <table class="quest-table">
           <thead>
             <tr>
-                          <th style="text-align:center;">체크</th>
-
+              <th style="text-align:center;">체크</th>
               <th>숙제</th>
               <th>슬롯</th>
             </tr>
           </thead>
           <tbody>
     `;
-    entries.forEach(([id,t],i)=>{
+    entries.forEach(([id,t])=>{
       const q = t.questName || "기타";
       const s = t.slotName || "-";
       const checked = checks[id];
@@ -508,9 +642,8 @@
           <td class="checkbox-cell">
             <input type="checkbox" class="quest-checkbox" ${checked?"checked":""} />
           </td>
-
           <td>${q}</td>
-          <td>${s}</td>
+          <td class="slot-cell">${s}</td>
         </tr>
       `;
     });
@@ -526,6 +659,57 @@
         if(cb.checked) db.ref(path).set(true);
         else db.ref(path).remove();
       });
+    });
+
+    // ✅ 전면전비 슬롯 강조
+    highlightSlotsInQuestTable();
+  }
+
+  // ✅ 전면전비 슬롯 강조 로직
+  function highlightSlotsInQuestTable(){
+    const plan = getPlanForDateKey(currentDateKey);
+    const rows = questContent.querySelectorAll("tr[data-id]");
+    if(!rows.length) return;
+
+    // 모든 슬롯 셀에서 기존 강조 제거
+    rows.forEach(row=>{
+      const slotTd = row.querySelector(".slot-cell");
+      if(slotTd){
+        slotTd.classList.remove("slot-highlight-cell");
+      }
+    });
+
+    if(!plan) return;
+
+    const keywords = new Set();
+    if(plan.label) keywords.add(plan.label);
+    (plan.items || []).forEach(it=>{
+      if(it) keywords.add(it);
+    });
+
+    rows.forEach(row=>{
+      const slotTd = row.querySelector(".slot-cell");
+      if(!slotTd) return;
+      const slotName = (slotTd.textContent || "").trim();
+      if(!slotName) return;
+
+      let matched = false;
+      for(const key of keywords){
+        const slotClean = slotName.replace(/\s/g,"");
+        const keyClean = key.replace(/\s/g,"");
+        if(
+          slotClean &&
+          keyClean &&
+          (slotClean.includes(keyClean) || keyClean.includes(slotClean))
+        ){
+          matched = true;
+          break;
+        }
+      }
+
+      if(matched){
+        slotTd.classList.add("slot-highlight-cell");
+      }
     });
   }
 
@@ -597,6 +781,10 @@
     todayText.textContent = keyToKoreanText(key);
     dateKeyText.textContent = `게임 날짜 키: ${key}`;
     sideDateText.textContent = key;
+
+    // ✅ 날짜가 바뀔 때마다 오늘 확인할 것 다시 렌더
+    renderTodayCheckList();
+
     attachListeners();
   }
 
