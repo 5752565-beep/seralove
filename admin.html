@@ -92,6 +92,63 @@
     }
     .post-meta { font-size: 11px; color:#9ca3af; margin-top:2px; }
     .post-actions { display:flex; gap:4px; }
+
+    /* 전면전비 슬롯 입력 UI */
+    .battle-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .battle-tab {
+      flex: 1;
+      min-width: 0;
+      padding: 4px 0;
+      font-size: 11px;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      color: #374151;
+      cursor: pointer;
+      text-align: center;
+    }
+    .battle-tab.active {
+      background: #4f46e5;
+      color: #fff;
+      border-color: #4f46e5;
+    }
+    .battle-table-wrapper {
+      overflow-x: auto;
+      margin-top: 4px;
+    }
+    .battle-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    .battle-table th,
+    .battle-table td {
+      border: 1px solid #e5e7eb;
+      padding: 4px;
+      text-align: left;
+    }
+    .battle-table th {
+      background: #f9fafb;
+      font-weight: 600;
+    }
+    .battle-table input[type="text"] {
+      width: 100%;
+      padding: 3px 4px;
+      font-size: 11px;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+    }
+    .battle-time {
+      white-space: nowrap;
+      background: #f3f4f6;
+      font-weight: 600;
+      width: 70px;
+    }
   </style>
 </head>
 <body>
@@ -157,6 +214,76 @@
       <button class="btn btn-soft" id="addWeekdayTasksBtn" style="width:100%; margin-top:8px;">
         요일별 고정 숙제 자동 추가
       </button>
+      <!-- 전면전비 슬롯 입력 버튼 -->
+      <button class="btn btn-soft2" id="editBattleSlotsBtn" style="width:100%; margin-top:8px;">
+        전면전비 슬롯 입력
+      </button>
+    </div>
+
+    <!-- 전면전비 슬롯 입력 (요일 탭 + 6개 슬롯) -->
+    <div class="card" id="battleSlotEditor" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span class="field-label" style="font-size:13px; color:#374151;">전면전비 일주일 슬롯 내용</span>
+        <span class="badge">요일별 6개 시간대</span>
+      </div>
+      <div style="font-size:12px; color:#6b7280; margin-bottom:8px;">
+        위에서 <b>요일 탭</b>을 선택하고, 아래에서 그 요일의 <b>6개 시간대</b> 내용을 입력하세요.<br>
+        입력한 내용은 저장되며, <b>전면전비만 추가</b> / <b>고정 숙제 전체 추가</b> 버튼을 누를 때<br>
+        <u>선택된 날짜의 요일에 해당하는 6개 내용</u>이 자동으로 슬롯에 들어갑니다.
+      </div>
+
+      <!-- 요일 탭 -->
+      <div class="battle-tabs">
+        <button class="battle-tab active" data-day="0">월</button>
+        <button class="battle-tab" data-day="1">화</button>
+        <button class="battle-tab" data-day="2">수</button>
+        <button class="battle-tab" data-day="3">목</button>
+        <button class="battle-tab" data-day="4">금</button>
+        <button class="battle-tab" data-day="5">토</button>
+        <button class="battle-tab" data-day="6">일</button>
+      </div>
+
+      <!-- 선택된 요일의 6개 시간대 -->
+      <div class="battle-table-wrapper">
+        <table class="battle-table">
+          <thead>
+            <tr>
+              <th style="width:70px;">시간대</th>
+              <th>퀘스트 내용 (선택된 요일)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="battle-time">11~15</td>
+              <td><input type="text" id="battle-slot-0"></td>
+            </tr>
+            <tr>
+              <td class="battle-time">15~19</td>
+              <td><input type="text" id="battle-slot-1"></td>
+            </tr>
+            <tr>
+              <td class="battle-time">19~23</td>
+              <td><input type="text" id="battle-slot-2"></td>
+            </tr>
+            <tr>
+              <td class="battle-time">23~03</td>
+              <td><input type="text" id="battle-slot-3"></td>
+            </tr>
+            <tr>
+              <td class="battle-time">03~07</td>
+              <td><input type="text" id="battle-slot-4"></td>
+            </tr>
+            <tr>
+              <td class="battle-time">07~11</td>
+              <td><input type="text" id="battle-slot-5"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:6px; font-size:11px; color:#9ca3af;">
+        내부 저장 구조: <b>battleSlots[요일index][슬롯index]</b><br>
+        요일index: 월=0 ~ 일=6 / 슬롯index: 0=11~15, 1=15~19, ... 5=07~11
+      </div>
     </div>
 
     <!-- 숙제 슬롯 목록 -->
@@ -234,7 +361,7 @@
       authDomain: "sera-daily-quest.firebaseapp.com",
       databaseURL: "https://sera-daily-quest-default-rtdb.firebaseio.com",
       projectId: "sera-daily-quest",
-  storageBucket: "sera-daily-quest.firebasestorage.app", // ✅ 콘솔에 찍힌 거랑 동일하게
+      storageBucket: "sera-daily-quest.firebasestorage.app",
       messagingSenderId: "718148155264",
       appId: "1:718148155264:web:cb0a651fa38f918e6ab365"
     };
@@ -262,6 +389,9 @@
     const addFixedAllBtn = document.getElementById("addFixedAllBtn");
     const addWeekdayTasksBtn = document.getElementById("addWeekdayTasksBtn");
 
+    const editBattleSlotsBtn = document.getElementById("editBattleSlotsBtn");
+    const battleSlotEditor = document.getElementById("battleSlotEditor");
+
     const postImageInput = document.getElementById("postImageInput");
     const postTextInput = document.getElementById("postTextInput");
     const postUploadBtn = document.getElementById("postUploadBtn");
@@ -274,6 +404,24 @@
 
     let boardPosts = {};
     const boardPostsRef = db.ref("boardPosts");
+
+    // 전면전비 슬롯 템플릿 저장 위치 (요일별 7 × 슬롯 6)
+    const battleSlotsRef = db.ref("battleSlots");
+    const BATTLE_DAY_COUNT = 7;  // 월~일
+    const BATTLE_SLOT_COUNT = 6; // 6개 시간대
+
+    // 요일 탭 관련
+    const battleTabs = document.querySelectorAll(".battle-tab");
+    const battleSlotInputs = [];
+    for (let i = 0; i < BATTLE_SLOT_COUNT; i++) {
+      battleSlotInputs[i] = document.getElementById(`battle-slot-${i}`);
+    }
+
+    let activeBattleDayIndex = 0; // 월요일부터 시작
+    // 메모리 캐시: [요일index][슬롯index]
+    let battleSlotsCache = Array.from({ length: BATTLE_DAY_COUNT }, () =>
+      Array(BATTLE_SLOT_COUNT).fill("")
+    );
 
     // ===== 날짜/키 유틸 =====
     function pad(n) { return n.toString().padStart(2, "0"); }
@@ -332,7 +480,7 @@
       { questName: "경기장",           slotName: "5회하기", eventTime: "" },
       { questName: "화물차보내기",     slotName: "4대보내기", eventTime: "" },
       { questName: "리소스찾기",       slotName: "5개찾기", eventTime: "" },
-      { questName: "광갱",       slotName: "4곳보내기", eventTime: "" },
+      { questName: "광갱",             slotName: "4곳보내기", eventTime: "" },
       { questName: "현상금퀘스트",     slotName: "", eventTime: "" },
       { questName: "레이더 완료하기",  slotName: "", eventTime: "" }
     ];
@@ -345,6 +493,9 @@
       { questName: "전면전비(03 ~ 07)", slotName: "", eventTime: "03~07" },
       { questName: "전면전비(07 ~ 11)", slotName: "", eventTime: "07~11" }
     ];
+
+    // 전면전비 시간대 배열 (슬롯index 0~5)
+    const battleTimeRanges = fixedBattleTasks.map(t => t.eventTime);
 
     // 요일별 추가용
     const sundayTasks = [
@@ -405,19 +556,150 @@
       }
     }
 
+    // JS Date.getDay(0=일~6=토) → 월(0)~일(6) index
+    function getMondayBasedIndex(day) {
+      if (day === 0) return 6; // 일요일 → 6
+      return day - 1;          // 월(1)→0, 화(2)→1, ...
+    }
+
+    // ===== 전면전비 슬롯 템플릿 관련 =====
+
+    // Firebase → battleSlotsCache 로드
+    function loadBattleSlots() {
+      battleSlotsRef.once("value", (snap) => {
+        const data = snap.val() || {};
+        for (let d = 0; d < BATTLE_DAY_COUNT; d++) {
+          for (let s = 0; s < BATTLE_SLOT_COUNT; s++) {
+            const val = data[d] && data[d][s] ? data[d][s] : "";
+            battleSlotsCache[d][s] = val;
+          }
+        }
+        renderBattleSlotsInputs();
+      });
+    }
+
+    function saveBattleSlot(dayIndex, slotIndex, value) {
+      battleSlotsRef.child(`${dayIndex}/${slotIndex}`).set(value);
+    }
+
+    function renderBattleSlotsInputs() {
+      // 현재 activeBattleDayIndex 기준으로 인풋 채우기
+      for (let s = 0; s < BATTLE_SLOT_COUNT; s++) {
+        const input = battleSlotInputs[s];
+        if (!input) continue;
+        input.value = battleSlotsCache[activeBattleDayIndex][s] || "";
+      }
+    }
+
+    function setActiveBattleDay(dayIndex) {
+      activeBattleDayIndex = dayIndex;
+      battleTabs.forEach(btn => {
+        const d = Number(btn.dataset.day);
+        btn.classList.toggle("active", d === dayIndex);
+      });
+      renderBattleSlotsInputs();
+    }
+
+    function attachBattleTabEvents() {
+      battleTabs.forEach(btn => {
+        btn.addEventListener("click", () => {
+          const day = Number(btn.dataset.day);
+          setActiveBattleDay(day);
+        });
+      });
+    }
+
+    function attachBattleSlotInputs() {
+      for (let s = 0; s < BATTLE_SLOT_COUNT; s++) {
+        const input = battleSlotInputs[s];
+        if (!input) continue;
+        input.addEventListener("change", () => {
+          const val = input.value.trim();
+          battleSlotsCache[activeBattleDayIndex][s] = val;
+          saveBattleSlot(activeBattleDayIndex, s, val);
+        });
+      }
+    }
+
+    // 전면전비 6개 자동 추가 (선택한 날짜의 요일에 해당하는 템플릿 사용)
+    async function addBattleFromSlots(showAlert = true) {
+      if (!currentDateKey) {
+        alert("먼저 날짜를 선택해 주세요.");
+        return;
+      }
+
+      const jsDay = getDayOfKey(currentDateKey);    // 0=일~6=토
+      const dayIndex = getMondayBasedIndex(jsDay);  // 0=월~6=일
+
+      const existing = Object.values(tasks || {});
+      let addedCount = 0;
+
+      for (let slotIndex = 0; slotIndex < BATTLE_SLOT_COUNT; slotIndex++) {
+        const slotText = (battleSlotsCache[dayIndex] && battleSlotsCache[dayIndex][slotIndex] || "").trim();
+        if (!slotText) continue;
+
+        const timeRange = battleTimeRanges[slotIndex];
+        const questName = fixedBattleTasks[slotIndex].questName;
+
+        const exists = existing.some(t =>
+          (t.questName || "") === questName &&
+          (t.slotName || "") === slotText &&
+          (t.eventTime || "") === timeRange
+        );
+        if (exists) continue;
+
+        const ref = db.ref(`days/${currentDateKey}/tasks`).push();
+        await ref.set({
+          questName,
+          slotName: slotText,
+          eventTime: timeRange,
+          order: Date.now()
+        });
+
+        addedCount++;
+      }
+
+      if (showAlert) {
+        if (addedCount > 0) {
+          alert(`전면전비 슬롯 ${addedCount}개를 추가했습니다.`);
+        } else {
+          alert("추가할 전면전비 슬롯이 없습니다.\n(해당 요일 템플릿이 비어있거나 이미 추가됨)");
+        }
+      }
+    }
+
+    // 슬롯 입력 카드 토글
+    editBattleSlotsBtn.addEventListener("click", () => {
+      if (!battleSlotEditor) return;
+      const isHidden = battleSlotEditor.style.display === "none";
+      battleSlotEditor.style.display = isHidden ? "block" : "none";
+    });
+
+    // ===== 버튼 바인딩 =====
     addFixedDailyBtn.addEventListener("click", () => {
       addFixedToDate(fixedDailyTasks);
       alert("일일 고정 숙제를 추가했습니다.");
     });
 
+    // 전면전비만 추가 => 요일 템플릿 기반
     addFixedBattleBtn.addEventListener("click", () => {
-      addFixedToDate(fixedBattleTasks);
-      alert("전면전비 고정 숙제를 추가했습니다.");
+      addBattleFromSlots(true);
     });
 
-    addFixedAllBtn.addEventListener("click", () => {
-      addFixedToDate([...fixedDailyTasks, ...fixedBattleTasks]);
-      alert("고정 숙제 전체를 추가했습니다.");
+    // 고정 숙제 전체 추가: 일일 공통 + 슬롯 기반 전면전비
+    addFixedAllBtn.addEventListener("click", async () => {
+      if (!currentDateKey) {
+        alert("먼저 날짜를 선택해 주세요.");
+        return;
+      }
+
+      // 1) 일일 공통
+      addFixedToDate(fixedDailyTasks);
+
+      // 2) 전면전비 슬롯 (알림은 따로 안 띄움)
+      await addBattleFromSlots(false);
+
+      alert("고정 숙제 전체(일일 공통 + 전면전비 슬롯)를 추가했습니다.");
     });
 
     addWeekdayTasksBtn.addEventListener("click", () => {
@@ -742,6 +1024,11 @@
       // if (!askPassword()) return;
       cleanPreviousDayIfAfterReset(); // 11시 이후면 전날 days/* 삭제
       initDate();
+
+      // 전면전비 탭/입력 초기화
+      attachBattleTabEvents();
+      attachBattleSlotInputs();
+      loadBattleSlots();   // Firebase → 캐시 → 현재 탭 인풋에 반영
     }
 
     init();
